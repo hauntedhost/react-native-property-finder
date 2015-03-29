@@ -96,9 +96,6 @@ class SearchPage extends Component {
       location => {
         var search = location.coords.latitude + ',' +
                      location.coords.longitude;
-        this.setState({
-          searchString: search
-        });
         var query = UrlForQueryAndPage('centre_point', search, 1);
         this._executeQuery(query);
       },
