@@ -1,6 +1,7 @@
 'use strict';
-
 var React = require('react-native');
+var SearchResults = require('./search-results');
+
 var {
   StyleSheet,
   Text,
@@ -12,12 +13,31 @@ var {
   Component
 } = React;
 
+function UrlForQueryAndPage(key, value, pageNumber) {
+  var data = {
+    country: 'uk',
+    pretty: '1',
+    encoding: 'json',
+    listing_type: 'buy',
+    action: 'search_listings',
+    page: pageNumber,
+    [key]: value
+  };
+
+  var queryString = Object.keys(data)
+    .map(key => key + '=' + encodeURIComponent(data[key]))
+    .join('&');
+
+  return 'http://api.nestoria.co.uk/api?' + queryString;
+}
+
 class SearchPage extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      searchString: 'Asheville, NC',
-      isLoading: false
+      searchString: 'london',
+      isLoading: false,
+      message: ''
     };
   }
 
@@ -27,14 +47,47 @@ class SearchPage extends Component {
     });
   }
 
+  _handleResponse(response) {
+    this.setState({
+      isLoading: false,
+      message: ''
+    });
+
+    // if (/^1\d+$/.test(response.application_response_code)) {
+    if (response.application_response_code[0] === '1') {
+      this.props.navigator.push({
+        title: 'Results',
+        component: SearchResults,
+        passProps: {
+          listings: response.listings
+        }
+      });
+    } else {
+      this.setState({
+        message: 'Location not recognized, please try again.'
+      });
+    }
+  }
   _executeQuery(query) {
+    console.log('query: ', query);
+
     this.setState({
       isLoading: true
     });
+
+    fetch(query)
+      .then(response => response.json())
+      .then(json => this._handleResponse(json.response))
+      .catch(error =>
+        this.setState({
+          isLoading: false,
+          message: 'Oops. Something went wrong: ' + error
+        })
+      );
   }
 
   onSearchPressed() {
-    var query = 'testing';
+    var query = UrlForQueryAndPage('place_name', this.state.searchString, 1);
     this._executeQuery(query);
   }
 
@@ -70,6 +123,7 @@ class SearchPage extends Component {
         <Image source={{uri: 'http://i.imgur.com/98CK4AH.gif'}}
                style={styles.houseImage}/>
         {spinner}
+        <Text style={styles.description}>{this.state.message}</Text>
       </View>
     );
   }

@@ -3,7 +3,6 @@
  * https://github.com/facebook/react-native
  */
 'use strict';
-
 var React = require('react-native');
 var SearchPage = require('./search-page');
 
